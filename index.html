@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+	<head>
+		<title>2bit</title>
+		<style>
+			.input {
+				display: inline-block;
+				padding-left: 100px;
+			}
+		</style>
+		<script>
+			function loaded() {
+				setInterval(update, 200);
+				document.getElementById("submit").disabled = false;
+			}
+			function update() {
+				var out = document.getElementById("out");
+				var form = window.document.form;
+				var dither = form.dither;
+				for (var i = 0; i < dither.length; i++) {
+					if (dither[i].checked) {
+						dither = dither[i].value;
+						break;
+					}
+				}
+				if (dither === "dither-manual") {
+					dither = form["dither-manual-number"];
+				}
+				var nrdither = form.nrdither;
+				for (var i = 0; i < nrdither.length; i++) {
+					if (nrdither[i].checked) {
+						nrdither = nrdither[i].value;
+						break;
+					}
+				}
+				if (nrdither === "nrdither-manual") {
+					nrdither = form["nrdither-manual-number"];
+				}
+				var bits = form.bits;
+				for (var i = 0; i < bits.length; i++) {
+					if (bits[i].checked) {
+						bits = bits[i].value;
+						break;
+					}
+				}
+				var percolor = form.percolor[1].checked;
+				var string = "https://niles.xyz/2bit/out/test8-output-";
+				if (percolor) {
+					string = string + "per-color-"
+				}
+				if (dither != "dither-none") {
+					string = string + "dither-";
+					if (dither == "dither-auto") {
+						string = string + "auto";
+					} else {
+						string = string + dither.value;
+					}
+					string = string + "%-";
+				}
+				if (nrdither != "nrdither-none") {
+					string = string + "nonrandom-dither-";
+					if (nrdither == "nrdither-auto") {
+						string = string + "auto";
+					} else {
+						string = string + nrdither.value;
+					}
+					string = string + "pixels-";
+				}
+				string = string + bits;
+				var smallstring = string + "bits-zoom.png"
+				string = string + "bits.png";
+				var out = document.getElementById("out");
+				var small = document.getElementById("small");
+				if (out.src === string) {
+					return;
+				}
+				out.src = string;
+				small.src = smallstring;
+			}
+		</script>
+	</head>
+	<body onload="loaded();">
+		<form method="post" action="https://niles.xyz:4000/render.pyhtml" enctype="multipart/form-data" name="form">
+			File: <br />
+			<div class="input">
+				<input type="file" name="file" />
+			</div>
+			<br />
+			<br />
+			Bits:<br />
+			<div class="input">
+				<input type="radio" name="bits" value="1" /> 1
+				<input type="radio" name="bits" value="2" checked="checked" /> 2
+				<input type="radio" name="bits" value="3" /> 3
+				<input type="radio" name="bits" value="4" /> 4
+				<input type="radio" name="bits" value="5" /> 5
+				<input type="radio" name="bits" value="6" /> 6
+				<input type="radio" name="bits" value="7" /> 7
+				<input type="radio" name="bits" value="8" /> 8
+				<br />
+				<input type="radio" value="false" name="percolor" checked="checked" /> bits per pixel <br />
+				<input type="radio" value="true" name="percolor" /> bits per color per pixel
+			</div>
+			<br />
+			<br />
+			Dither: <br />
+			<div class="input">
+				<input type="radio" value="dither-none" name="dither" checked="checked" /> None
+				<br />
+				<input type="radio" value="dither-manual" name="dither" /> <input type="text" name="dither-manual-number" value="15" style="width: 1.2em;" /> %
+				<br />
+				<input type="radio" value="dither-auto" name="dither" />Auto
+			</div>
+			<br />
+			Non random dither: <br />
+			<div class="input">
+				<input type="radio" value="nrdither-none" name="nrdither" checked="checked" /> None
+				<br />
+				<input type="radio" value="nrdither-manual" name="nrdither" /> <input value="10" type="text" name="nrdither-manual-number" style="width: 1em;" /> px
+				<br />
+				<input type="radio" value="nrdither-auto" name="nrdither" /> Auto
+			</div>
+			<br />
+			<br />
+			<input id="submit" type="submit" name="submit" value="Render" onclick='this.value = "Please wait, this will take a while"; this.disabled = true' />
+		</form>
+		<br />
+		The only precomputed values for dither and non-random dither are none, 15%, 50% and auto, and none, 7px, 10px and auto respectively
+		<img src="https://niles.xyz/2bit/test8.png" style="display: inline-block; width: 30%; position: fixed; right: 30%; top: 0px; z-index: -1;">
+		<img id="out" style="display: inline-block; width: 30%; position: fixed; right: 0px; top: 0px; z-index: -1;">
+		<img src="https://niles.xyz/2bit/test8-zoom.png" style="display: inline-block; height: 200px; position: fixed; left: 0px; bottom: 0px; z-index: -2;">
+		<img id="small" style="display: inline-block; height: 200px; position: fixed; left: 700px; bottom: 0px; z-index: -1;">
+	</body>
+</html>
