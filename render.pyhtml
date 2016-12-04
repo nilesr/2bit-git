@@ -1,1 +1,85 @@
-/var/www-python/render.pyhtml
+<%!
+	import subprocess, traceback, os
+%><%
+	def get(l,k):
+		try:
+			return l[k]
+		except:
+			return str(k) + " expected, not found."
+	def try_convert(v, t):
+		try:
+			return t(v)
+		except:
+			return "Value " + str(v) + " was supposed to be a(n) " + str(t)
+	f = d["file"]
+	render = False
+	if len(f) > 100*1024*1024: # 100 mb?
+		render = "File too large. Maximum size 100mb"
+	else:
+		bits = try_convert(get(d,"bits"), int)
+		dither = get(d, "dither")
+		if dither == "dither-none":
+			dither = False
+		elif dither == "dither-auto":
+			dither = "auto"
+		else:
+			dither = try_convert(get(d, "dither-manual-number"), float)
+			#dither = try_convert(get(d, "dither-manual-number").replace("%", ""), float)
+			if type(dither) == str:
+				render = "Dither must be a floating point number"
+		nrdither = get(d, "nrdither")
+		if nrdither == "nrdither-none":
+			nrdither = False
+		elif dither == "nrdither-auto":
+			nrdither = "auto"
+		else:
+			nrdither = try_convert(get(d, "nrdither-manual-number"), int)
+			nrdither = 10 # DEBUG
+			if type(nrdither) == str:
+				render = "Non-random dither must be an integer"
+		if type(bits) == str:
+			render = "Bits must be an integer"
+		percolor = get(d, "percolor")
+		if percolor == "true":
+			percolor = True
+		elif percolor == "false":
+			percolor = False
+		else:
+			render = percolor
+		if nrdither and not dither:
+			render = "nonrandom dither requires dither"
+	if not render:
+		inf = subprocess.check_output(["mktemp", "/tmp/2bit.XXXXXXXXX"]).decode("utf-8").strip()
+		inf_o = open(inf, "w")
+		inf_o.write(f)
+		inf_o.close()
+		outf = inf + ".png"
+		prog = ["python3", "/opt/2bit.py", inf, outf, str(bits)]
+		if percolor:
+			prog.append("--per-color")
+		if dither:
+			prog.append("--dither")
+			prog.append(str(dither))
+		if nrdither:
+			prog.append("--non-random-dither")
+			prog.append(str(nrdither))
+		prog.append("--no-status-bar")
+		try:
+			value = subprocess.check_call(prog)
+		except subprocess.CalledProcessError as e:
+			render = str(e.returncode) + " " + str(e.output) + "\n" + traceback.format_exc()
+	if not render:
+		rf = "/var/www/niles.xyz/2bit" + outf
+		subprocess.call(["mv", outf, rf])
+		subprocess.call(["rm", outf, inf])
+		render = "<img src=\"https://niles.xyz/2bit" + outf + "\" />"
+	if not render:
+		render = "Error? idk"
+%>
+<!doctype html>
+<html>
+<body>
+<h1>Rendered image</h1>
+${render}
+</body>
+</html>
